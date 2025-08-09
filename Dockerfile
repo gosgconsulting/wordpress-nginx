@@ -93,4 +93,5 @@ EXPOSE 80
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
-HEALTHCHECK --timeout=10s CMD sh -c 'curl --silent --fail http://127.0.0.1:${PORT:-80}/wp-login.php'
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD sh -c 'curl --silent --fail http://127.0.0.1:${PORT:-80}/wp-login.php && curl --silent --fail http://127.0.0.1:${PORT:-80}/fmp-ping'

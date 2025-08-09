@@ -3,6 +3,7 @@ services:
     image: mariadb:11
     volumes:
       - "db-data:/var/lib/mysql"
+      - "./config/my.cnf:/etc/mysql/conf.d/custom.cnf:ro"
     environment:
       MYSQL_ROOT_PASSWORD: wordpress
       MYSQL_DATABASE: wordpress
