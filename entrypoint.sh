@@ -44,8 +44,8 @@ chown -R nobody:nobody /var/www/wp-content || true
 find /var/www/wp-content -type d -exec chmod 775 {} \; || true
 find /var/www/wp-content -type f -exec chmod 664 {} \; || true
 
-# Ensure Nginx cache directory exists and is writable
-mkdir -p /var/cache/nginx/fastcgi || true
+# Ensure Nginx cache directories exist and are writable
+mkdir -p /var/cache/nginx/fastcgi /var/cache/nginx/fastcgi_long || true
 chown -R nginx:nginx /var/cache/nginx || true
 
 exec "$@"
