@@ -92,6 +92,8 @@ if (!defined('WP_REDIS_CONFIG')) {
     $redisPort        = (int) (getenv('WP_REDIS_PORT') ?: 6379);
     $redisDb          = (int) (getenv('WP_REDIS_DATABASE') ?: 0);
     $redisPassword    = getenv('WP_REDIS_PASSWORD') ?: null;
+    $redisUsername    = getenv('WP_REDIS_USERNAME') ?: null;
+    $redisScheme      = getenv('WP_REDIS_SCHEME') ?: null; // e.g. 'tls'
     $redisTimeout     = (float) (getenv('WP_REDIS_TIMEOUT') ?: 1.0);
     $redisReadTimeout = (float) (getenv('WP_REDIS_READ_TIMEOUT') ?: 1.0);
     $redisMaxTtl      = (int) (getenv('WP_REDIS_MAXTTL') ?: 3600);
@@ -104,8 +106,11 @@ if (!defined('WP_REDIS_CONFIG')) {
         'host'         => $redisHost,
         'port'         => $redisPort,
         'database'     => $redisDb,
+        'username'     => $redisUsername,
         'password'     => $redisPassword,
         'serializer'   => 'igbinary',
+        // Enable TLS if requested via env
+        ...( $redisScheme ? ['scheme' => $redisScheme] : [] ),
         'prefix'       => $redisPrefix,
         'timeout'      => $redisTimeout,
         'read_timeout' => $redisReadTimeout,
