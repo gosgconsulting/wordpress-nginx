@@ -88,33 +88,19 @@ if (!defined('ABSPATH')) {
 require_once(ABSPATH . 'wp-secrets.php');
 // Configure Object Cache Pro / Redis client using environment variables
 if (!defined('WP_REDIS_CONFIG')) {
-    $redisHost        = getenv('WP_REDIS_HOST') ?: 'valkey';
-    $redisPort        = (int) (getenv('WP_REDIS_PORT') ?: 6379);
-    $redisDb          = (int) (getenv('WP_REDIS_DATABASE') ?: 0);
-    $redisPassword    = getenv('WP_REDIS_PASSWORD') ?: null;
-    $redisUsername    = getenv('WP_REDIS_USERNAME') ?: null;
-    $redisScheme      = getenv('WP_REDIS_SCHEME') ?: null; // e.g. 'tls'
-    $redisTimeout     = (float) (getenv('WP_REDIS_TIMEOUT') ?: 1.0);
-    $redisReadTimeout = (float) (getenv('WP_REDIS_READ_TIMEOUT') ?: 1.0);
-    $redisMaxTtl      = (int) (getenv('WP_REDIS_MAXTTL') ?: 3600);
-    $redisPrefix      = getenv('WP_CACHE_KEY_SALT') ?: '';
-    $redisToken       = getenv('WP_REDIS_LICENSE_TOKEN') ?: null;
-
     define('WP_REDIS_CONFIG', [
-        'token'        => $redisToken,
+        'token'        => getenv('WP_REDIS_LICENSE_TOKEN'),
         'client'       => 'phpredis',
-        'host'         => $redisHost,
-        'port'         => $redisPort,
-        'database'     => $redisDb,
-        'username'     => $redisUsername,
-        'password'     => $redisPassword,
+        'host'         => getenv('WP_REDIS_HOST'),
+        'port'         => (int) getenv('WP_REDIS_PORT'),
+        'database'     => (int) (getenv('WP_REDIS_DATABASE') ?: 0),
+        'username'     => getenv('WP_REDIS_USERNAME'),
+        'password'     => getenv('WP_REDIS_PASSWORD'),
         'serializer'   => 'igbinary',
-        // Enable TLS if requested via env
-        ...( $redisScheme ? ['scheme' => $redisScheme] : [] ),
-        'prefix'       => $redisPrefix,
-        'timeout'      => $redisTimeout,
-        'read_timeout' => $redisReadTimeout,
-        'maxttl'       => $redisMaxTtl,
+        'prefix'       => getenv('WP_CACHE_KEY_SALT'),
+        'timeout'      => (float) (getenv('WP_REDIS_TIMEOUT') ?: 1.0),
+        'read_timeout' => (float) (getenv('WP_REDIS_READ_TIMEOUT') ?: 1.0),
+        'maxttl'       => (int) (getenv('WP_REDIS_MAXTTL') ?: 3600),
     ]);
 }
 require_once(ABSPATH . 'wp-settings.php');
