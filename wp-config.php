@@ -94,7 +94,7 @@ if (!defined('WP_REDIS_CONFIG')) {
         'host'         => getenv('WP_REDIS_HOST'),
         'port'         => (int) getenv('WP_REDIS_PORT'),
         'database'     => (int) (getenv('WP_REDIS_DATABASE') ?: 0),
-        'username'     => getenv('WP_REDIS_USERNAME'),
+        'username'     => getenv('WP_REDIS_USERNAME') ?: 'default',
         'password'     => getenv('WP_REDIS_PASSWORD'),
         'serializer'   => 'igbinary',
         'prefix'       => getenv('WP_CACHE_KEY_SALT'),
