@@ -48,8 +48,7 @@ COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN ln -s /usr/bin/php84 /usr/bin/php
 
-# wp-content volume
-VOLUME /var/www/wp-content
+# working directory and permissions
 WORKDIR /var/www/wp-content
 RUN chown -R nobody:nobody /var/www
 
