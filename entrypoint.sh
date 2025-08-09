@@ -36,4 +36,16 @@ if ! [ -f "/var/www/wp-content/wp-secrets.php" ]; then
         curl -f https://api.wordpress.org/secret-key/1.1/salt/ >> /var/www/wp-content/wp-secrets.php
     fi
 fi
+
+# Ensure wp-content is always writable (plugins/themes/uploads/upgrade)
+umask 0002
+mkdir -p /var/www/wp-content/{uploads,plugins,themes,upgrade} || true
+chown -R nobody:nobody /var/www/wp-content || true
+find /var/www/wp-content -type d -exec chmod 775 {} \; || true
+find /var/www/wp-content -type f -exec chmod 664 {} \; || true
+
+# Ensure Nginx cache directory exists and is writable
+mkdir -p /var/cache/nginx/fastcgi || true
+chown -R nginx:nginx /var/cache/nginx || true
+
 exec "$@"

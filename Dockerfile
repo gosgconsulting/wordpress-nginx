@@ -7,6 +7,7 @@ RUN apk --no-cache add \
   php84 \
   php84-fpm \
   php84-mysqli \
+  php84-pdo_mysql \
   php84-json \
   php84-openssl \
   php84-curl \
@@ -24,10 +25,16 @@ RUN apk --no-cache add \
   php84-simplexml \
   php84-ctype \
   php84-mbstring \
+  php84-bcmath \
   php84-zip \
+  php84-soap \
   php84-opcache \
   php84-iconv \
   php84-pecl-imagick \
+  php84-pecl-redis \
+  php84-pecl-igbinary \
+  zstd \
+  lz4 \
   php84-session \
   php84-tokenizer \
   nginx \
