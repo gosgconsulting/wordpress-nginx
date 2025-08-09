@@ -86,4 +86,30 @@ if (!defined('ABSPATH')) {
 }
 
 require_once(ABSPATH . 'wp-secrets.php');
+// Configure Object Cache Pro / Redis client using environment variables
+if (!defined('WP_REDIS_CONFIG')) {
+    $redisHost        = getenv('WP_REDIS_HOST') ?: 'valkey';
+    $redisPort        = (int) (getenv('WP_REDIS_PORT') ?: 6379);
+    $redisDb          = (int) (getenv('WP_REDIS_DATABASE') ?: 0);
+    $redisPassword    = getenv('WP_REDIS_PASSWORD') ?: null;
+    $redisTimeout     = (float) (getenv('WP_REDIS_TIMEOUT') ?: 1.0);
+    $redisReadTimeout = (float) (getenv('WP_REDIS_READ_TIMEOUT') ?: 1.0);
+    $redisMaxTtl      = (int) (getenv('WP_REDIS_MAXTTL') ?: 3600);
+    $redisPrefix      = getenv('WP_CACHE_KEY_SALT') ?: '';
+    $redisToken       = getenv('WP_REDIS_LICENSE_TOKEN') ?: null;
+
+    define('WP_REDIS_CONFIG', [
+        'token'        => $redisToken,
+        'client'       => 'phpredis',
+        'host'         => $redisHost,
+        'port'         => $redisPort,
+        'database'     => $redisDb,
+        'password'     => $redisPassword,
+        'serializer'   => 'igbinary',
+        'prefix'       => $redisPrefix,
+        'timeout'      => $redisTimeout,
+        'read_timeout' => $redisReadTimeout,
+        'maxttl'       => $redisMaxTtl,
+    ]);
+}
 require_once(ABSPATH . 'wp-settings.php');
