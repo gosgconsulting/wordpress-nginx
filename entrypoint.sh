@@ -3,6 +3,15 @@
 # terminate on errors
 set -e
 
+# Configure Nginx to listen on the platform-provided port (e.g., Railway $PORT)
+PORT_TO_USE="${PORT:-80}"
+# Replace common defaults first
+sed -i "s/listen 80 default_server;/listen ${PORT_TO_USE} default_server;/" /etc/nginx/nginx.conf || true
+sed -i "s/listen \[::\]:80 default_server;/listen [::]:${PORT_TO_USE} default_server;/" /etc/nginx/nginx.conf || true
+# If config already had a different port, replace any existing one
+sed -i "s/listen \[::\]:[^;]* default_server;/listen [::]:${PORT_TO_USE} default_server;/" /etc/nginx/nginx.conf || true
+sed -i "s/listen [0-9][0-9]* default_server;/listen ${PORT_TO_USE} default_server;/" /etc/nginx/nginx.conf || true
+
 # Check if volume is empty
 if [ ! "$(ls -A "/var/www/wp-content" 2>/dev/null)" ]; then
     echo 'Setting up wp-content volume'
