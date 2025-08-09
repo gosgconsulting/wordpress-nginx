@@ -38,6 +38,7 @@ RUN apk --no-cache add \
   php84-session \
   php84-tokenizer \
   nginx \
+  nginx-mod-http-brotli \
   supervisor \
   curl \
   bash \
