@@ -17,6 +17,21 @@ foreach ($_ENV as $key => $value) {
     }
 }
 
+// Clear WordPress cookies when host changes (avoid redirect loops after domain switch)
+$__currentHost = $_SERVER['HTTP_HOST'] ?? '';
+$__lastHost = $_COOKIE['__wp_last_host'] ?? '';
+if ($__currentHost) {
+    $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    if ($__lastHost && strcasecmp($__lastHost, $__currentHost) !== 0) {
+        foreach (array_keys($_COOKIE) as $ck) {
+            if (preg_match('/^(wordpress_logged_in|wordpress_sec|wordpress_test_cookie|wp-settings-\d+|wp-settings-time-\d+|comment_author)/', $ck)) {
+                @setcookie($ck, '', time() - 3600, '/', '', $isSecure, true);
+            }
+        }
+    }
+    @setcookie('__wp_last_host', $__currentHost, time() + 86400 * 30, '/', '', $isSecure, false);
+}
+
 // Optional: allow additional config via env early (so user-defined defines take precedence)
 $__extraCfgEarly = getenv('WP_EXTRA_CONFIG') ?: getenv('WORDPRESS_CONFIG_EXTRA');
 if ($__extraCfgEarly) {
