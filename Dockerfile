@@ -92,6 +92,9 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 
 EXPOSE 80
 
+# Silence Supervisor's pkg_resources deprecation warning
+ENV PYTHONWARNINGS="ignore:pkg_resources is deprecated as an API:UserWarning"
+
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
