@@ -18,7 +18,7 @@ foreach ($_ENV as $key => $value) {
 }
 
 // Optional: allow additional config via env early (so user-defined defines take precedence)
-$__extraCfgEarly = getenv('WP_EXTRA_CONFIG');
+$__extraCfgEarly = getenv('WP_EXTRA_CONFIG') ?: getenv('WORDPRESS_CONFIG_EXTRA');
 if ($__extraCfgEarly) {
     @eval($__extraCfgEarly);
 }
@@ -78,28 +78,39 @@ if (!defined('WP_HOME') || !defined('WP_SITEURL')) {
 
 // Derive DB_* constants from common platform variables if not explicitly provided
 if (!defined('DB_HOST') || !defined('DB_NAME') || !defined('DB_USER') || !defined('DB_PASSWORD')) {
-    $mysqlHost = getenv('MYSQLHOST') ?: getenv('MYSQL_HOST') ?: '';
-    $mysqlPort = getenv('MYSQLPORT') ?: getenv('MYSQL_PORT') ?: '';
-    $mysqlDb   = getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: '';
-    $mysqlUser = getenv('MYSQLUSER') ?: getenv('MYSQL_USER') ?: '';
-    $mysqlPass = getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: '';
+    // Prefer explicit DB_* envs
+    $dbHost = getenv('DB_HOST');
+    $dbName = getenv('DB_NAME');
+    $dbUser = getenv('DB_USER');
+    $dbPass = getenv('DB_PASSWORD');
 
-    if ($mysqlHost && $mysqlDb && $mysqlUser) {
-        if (!defined('DB_HOST')) {
-            $hostWithPort = $mysqlHost . ($mysqlPort ? ':' . $mysqlPort : '');
-            define('DB_HOST', $hostWithPort);
+    // Fallback to WORDPRESS_DB_* (used by some platforms)
+    if (!$dbHost) { $dbHost = getenv('WORDPRESS_DB_HOST'); }
+    if (!$dbName) { $dbName = getenv('WORDPRESS_DB_NAME'); }
+    if (!$dbUser) { $dbUser = getenv('WORDPRESS_DB_USER'); }
+    if (!$dbPass) { $dbPass = getenv('WORDPRESS_DB_PASSWORD'); }
+
+    // Fallback to MariaDB/Mysql common variable names
+    if (!$dbHost) {
+        $mariadbHost = getenv('MARIADB_HOST') ?: getenv('MARIADB_PRIVATE_HOST') ?: getenv('MYSQLHOST') ?: getenv('MYSQL_HOST') ?: '';
+        $mariadbPort = getenv('MARIADB_PORT') ?: getenv('MARIADB_PRIVATE_PORT') ?: getenv('MYSQLPORT') ?: getenv('MYSQL_PORT') ?: '';
+        if ($mariadbHost) {
+            $dbHost = $mariadbHost . ($mariadbPort ? ':' . $mariadbPort : '');
         }
-        if (!defined('DB_NAME')) {
-            define('DB_NAME', $mysqlDb);
-        }
-        if (!defined('DB_USER')) {
-            define('DB_USER', $mysqlUser);
-        }
-        if (!defined('DB_PASSWORD')) {
-            define('DB_PASSWORD', $mysqlPass);
-        }
+    }
+    if (!$dbName) { $dbName = getenv('MARIADB_DATABASE') ?: getenv('MYSQLDATABASE') ?: getenv('MYSQL_DATABASE') ?: ''; }
+    if (!$dbUser) { $dbUser = getenv('MARIADB_USER') ?: getenv('MYSQLUSER') ?: getenv('MYSQL_USER') ?: ''; }
+    if (!$dbPass) { $dbPass = getenv('MARIADB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: getenv('MYSQL_PASSWORD') ?: ''; }
+
+    // Apply if available
+    if ($dbHost && $dbName && $dbUser) {
+        if (!defined('DB_HOST')) { define('DB_HOST', $dbHost); }
+        if (!defined('DB_NAME')) { define('DB_NAME', $dbName); }
+        if (!defined('DB_USER')) { define('DB_USER', $dbUser); }
+        if (!defined('DB_PASSWORD')) { define('DB_PASSWORD', $dbPass); }
     } else {
-        $databaseUrl = getenv('DATABASE_URL') ?: getenv('JAWSDB_URL') ?: getenv('CLEARDB_DATABASE_URL');
+        // URL-based fallbacks
+        $databaseUrl = getenv('DATABASE_URL') ?: getenv('MARIADB_URL') ?: getenv('MARIADB_PRIVATE_URL') ?: getenv('JAWSDB_URL') ?: getenv('CLEARDB_DATABASE_URL');
         if ($databaseUrl) {
             $parts = parse_url($databaseUrl);
             if ($parts && isset($parts['scheme']) && in_array(strtolower($parts['scheme']), ['mysql', 'mariadb'])) {
@@ -114,15 +125,9 @@ if (!defined('DB_HOST') || !defined('DB_NAME') || !defined('DB_USER') || !define
                         $hostWithPort = $host . ($port ? ':' . $port : '');
                         define('DB_HOST', $hostWithPort);
                     }
-                    if (!defined('DB_NAME')) {
-                        define('DB_NAME', $db);
-                    }
-                    if (!defined('DB_USER')) {
-                        define('DB_USER', $user);
-                    }
-                    if (!defined('DB_PASSWORD')) {
-                        define('DB_PASSWORD', $pass);
-                    }
+                    if (!defined('DB_NAME')) { define('DB_NAME', $db); }
+                    if (!defined('DB_USER')) { define('DB_USER', $user); }
+                    if (!defined('DB_PASSWORD')) { define('DB_PASSWORD', $pass); }
                 }
             }
         }
