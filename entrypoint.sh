@@ -56,20 +56,15 @@ done
 # Accept: yes/true/1/on (case-insensitive). Any other value (no/false/0/off/empty) disables.
 _auto_plugins_flag="$(printf '%s' "${WP_AUTO_PLUGINS:-}" | tr '[:upper:]' '[:lower:]')"
 if [ "$_auto_plugins_flag" = "yes" ] || [ "$_auto_plugins_flag" = "true" ] || [ "$_auto_plugins_flag" = "1" ] || [ "$_auto_plugins_flag" = "on" ]; then
-  # Source directory: use plugins-autoload/install (preferred), fallback to plugins-autoload/Install, and finally root for backward compatibility
+  # Source directory: root plugins-autoload; ignore optional subfolder 'library'
   SRC_BASE="/usr/src/wordpress/wp-content/plugins-autoload"
-  if [ -d "$SRC_BASE/install" ]; then
-    SRC_DIR="$SRC_BASE/install"
-  elif [ -d "$SRC_BASE/Install" ]; then
-    SRC_DIR="$SRC_BASE/Install"
-  else
-    SRC_DIR="$SRC_BASE"
-  fi
+  SRC_DIR="$SRC_BASE"
   DEST_DIR="/var/www/wp-content/plugins"
   if [ -d "$SRC_DIR" ]; then
     mkdir -p "$DEST_DIR"
     # Copy unpacked plugin folders
     find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null | while read -r DIRNAME; do
+      if [ "${DIRNAME,,}" = "library" ]; then continue; fi
       cp -r "$SRC_DIR/$DIRNAME" "$DEST_DIR/" 2>/dev/null || true
     done
     # Unzip any plugin archives (*.zip)
@@ -80,7 +75,9 @@ if [ "$_auto_plugins_flag" = "yes" ] || [ "$_auto_plugins_flag" = "true" ] || [ 
     # Activate only plugins provided in plugins-autoload (dirs or zip basenames)
     if [ -x /usr/local/bin/wp ] && /usr/local/bin/wp --path=/usr/src/wordpress core is-installed >/dev/null 2>&1; then
       AUTOPLUGS=""
-      for DIRNAME in $(find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null); do AUTOPLUGS="$AUTOPLUGS $DIRNAME"; done
+      for DIRNAME in $(find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null); do
+        if [ "${DIRNAME,,}" != "library" ]; then AUTOPLUGS="$AUTOPLUGS $DIRNAME"; fi
+      done
       for ZIPNAME in $(find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type f -name '*.zip' -printf '%f\n' 2>/dev/null); do AUTOPLUGS="$AUTOPLUGS ${ZIPNAME%.zip}"; done
       for PLUG in $AUTOPLUGS; do
         /usr/local/bin/wp --path=/usr/src/wordpress plugin activate "$PLUG" >/dev/null 2>&1 || true
