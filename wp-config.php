@@ -18,8 +18,29 @@ foreach ($_ENV as $key => $value) {
 }
 
 // Derive WP URLs robustly to avoid leaking internal ports (e.g., :8080)
-// Priority: explicit WP_HOME/WP_SITEURL → WORDPRESS_SITE_URL → RAILWAY_PUBLIC_DOMAIN (https)
+// Modes:
+// - WP_URL_MODE=auto → build from request Host/Scheme (handles multiple domains)
+// - Otherwise: explicit WP_HOME/WP_SITEURL → WORDPRESS_SITE_URL → RAILWAY_PUBLIC_DOMAIN (https)
 if (!defined('WP_HOME') || !defined('WP_SITEURL')) {
+    $urlMode = getenv('WP_URL_MODE') ?: '';
+    if (strtolower($urlMode) === 'auto') {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if ($host) {
+            // Strip port unless explicitly allowed
+            if (!getenv('WP_ALLOW_PORT_IN_URL')) {
+                $host = preg_replace('#:(\\d{2,5})$#', '', $host);
+            }
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            $scheme = $isHttps ? 'https' : 'http';
+            $finalUrl = $scheme . '://' . $host;
+            if (!defined('WP_HOME')) {
+                define('WP_HOME', $finalUrl);
+            }
+            if (!defined('WP_SITEURL')) {
+                define('WP_SITEURL', $finalUrl);
+            }
+        }
+    } else {
     $siteFromEnv   = getenv('WP_HOME') ?: getenv('WP_SITEURL') ?: getenv('WORDPRESS_SITE_URL') ?: '';
     $railwayDomain = getenv('RAILWAY_PUBLIC_DOMAIN') ?: '';
 
@@ -39,13 +60,21 @@ if (!defined('WP_HOME') || !defined('WP_SITEURL')) {
         if (!preg_match('#^https?://#i', $finalUrl)) {
             $finalUrl = 'https://' . $finalUrl;
         }
-        if (!defined('WP_HOME')) {
-            define('WP_HOME', $finalUrl);
-        }
-        if (!defined('WP_SITEURL')) {
-            define('WP_SITEURL', $finalUrl);
+            if (!defined('WP_HOME')) {
+                define('WP_HOME', $finalUrl);
+            }
+            if (!defined('WP_SITEURL')) {
+                define('WP_SITEURL', $finalUrl);
+            }
         }
     }
+}
+
+// Optional: allow additional config via env (e.g., DOMAIN_CURRENT_SITE)
+$__extraCfg = getenv('WP_EXTRA_CONFIG');
+if ($__extraCfg) {
+    // Expect simple define('NAME','value'); statements
+    @eval($__extraCfg);
 }
 
 // Derive DB_* constants from common platform variables if not explicitly provided
