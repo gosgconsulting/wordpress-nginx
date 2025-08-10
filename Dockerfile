@@ -42,8 +42,7 @@ RUN apk --no-cache add \
   supervisor \
   curl \
   bash \
-  less \
-  unzip
+  less
 
 # Configure nginx
 COPY config/nginx.conf /etc/nginx/nginx.conf
@@ -84,8 +83,6 @@ COPY --chown=nobody:nobody wp-cli.yml /usr/src/wordpress/
 COPY --chown=nobody:nobody wp-config.php /usr/src/wordpress
 RUN chmod 640 /usr/src/wordpress/wp-config.php
 
-# Optional autoload plugins directory (copy if present)
-COPY --chown=nobody:nobody plugins-autoload/ /usr/src/wordpress/wp-content/plugins-autoload/
 
 # Link wp-secrets to location on wp-content
 RUN ln -s /var/www/wp-content/wp-secrets.php /usr/src/wordpress/wp-secrets.php
