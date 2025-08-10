@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<ruleset name="Coding Style">
+  <exclude-pattern>resources/*</exclude-pattern>
+  <exclude-pattern>tests/bootstrap.php</exclude-pattern>
+  <exclude-pattern>tests/PHPStan/*.php</exclude-pattern>
+
+  <rule ref="PSR12">
+    <exclude name="PSR12.Files.FileHeader.SpacingAfterBlock" />
+    <exclude name="PSR12.Files.FileHeader.SpacingInsideBlock" />
+    <exclude name="PSR12.Files.FileHeader.IncorrectGrouping" />
+    <exclude name="PSR12.Classes.ClassInstantiation.MissingParentheses" />
+    <exclude name="PSR12.Classes.AnonClassDeclaration.SpaceAfterKeyword" />
+    <exclude name="PSR12.Traits.UseDeclaration.MultipleImport" />
+    <exclude name="PSR12.Properties.ConstantVisibility.NotFound" />
+    <exclude name="PSR12.ControlStructures.ControlStructureSpacing.FirstExpressionLine" />
+    <exclude name="PSR12.ControlStructures.ControlStructureSpacing.LineIndent" />
+    <exclude name="PSR12.ControlStructures.ControlStructureSpacing.CloseParenthesisLine" />
+    <exclude name="Generic.NamingConventions.UpperCaseConstantName.ConstantNotUpperCase" />
+    <exclude name="Generic.NamingConventions.UpperCaseConstantName.ClassConstantNotUpperCase" />
+    <exclude name="Generic.Files.LineLength" />
+  </rule>
+
+  <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
+    <exclude-pattern>/api.php</exclude-pattern>
+    <exclude-pattern>/bootstrap.php</exclude-pattern>
+    <exclude-pattern>/stubs/mu-plugin.php</exclude-pattern>
+    <exclude-pattern>/redis-cache-pro.php</exclude-pattern>
+  </rule>
+
+  <rule ref="Generic.WhiteSpace.ScopeIndent.IncorrectExact">
+    <exclude-pattern>src/Connectors/*Connector.php</exclude-pattern>
+  </rule>
+
+  <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+    <exclude-pattern>src/Plugin/Api/*.php</exclude-pattern>
+    <exclude-pattern>src/ObjectCaches/*.php</exclude-pattern>
+  </rule>
+
+  <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+    <exclude-pattern>src/Extensions/*.php</exclude-pattern>
+  </rule>
+  <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
+    <exclude-pattern>src/Extensions/*.php</exclude-pattern>
+  </rule>
+  <rule ref="Squiz.Classes.ValidClassName.NotCamelCaps">
+    <exclude-pattern>src/Extensions/*.php</exclude-pattern>
+  </rule>
+
+  <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+    <exclude-pattern>tests/*.php</exclude-pattern>
+  </rule>
+  <rule ref="PSR2.Methods.MethodDeclaration.Underscore">
+    <exclude-pattern>tests/*.php</exclude-pattern>
+  </rule>
+  <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
+    <exclude-pattern>tests/*.php</exclude-pattern>
+  </rule>
+
+</ruleset>

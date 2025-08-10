@@ -1,0 +1,104 @@
+<?php
+
+global $wp_object_cache;
+
+try {
+    $info = $wp_object_cache->connection()->info('commandstats');
+} catch (Throwable $th) {
+    $error = $th->getMessage();
+    $info = false;
+}
+
+$stats = [];
+
+if (is_array($info)) {
+    foreach ($info as $key => $value) {
+        $command = strtoupper(str_replace(['cmdstat_', '|'], ['', ' '], $key));
+
+        $stats[$command] = array_reduce(explode(',', $value), static function ($carry, $item) {
+            [$key, $value] = explode('=', $item);
+            $carry[$key] = (float) $value;
+
+            return $carry;
+        }, []);
+    }
+
+    uasort($stats, function($a, $b) {
+        return $b['usec_per_call'] <=> $a['usec_per_call'];
+    });
+}
+
+?>
+
+<div class="objectcache:widget objectcache:commands-widget objectcache:flushlog-widget">
+
+    <?php if ($info === false): ?>
+
+        <p class="inset">Unable to retrieve command statistics (<?php echo esc_html($error); ?>).</p>
+
+    <?php elseif (! count($stats)) : ?>
+
+        <p class="inset">No command statistics have been logged, yet.</p>
+
+    <?php else : ?>
+
+        <?php foreach ($stats as $key => $value): ?>
+
+            <details
+                data-calls="<?php echo esc_attr($value['calls']); ?>"
+                data-rejected="<?php echo esc_attr($value['rejected_calls']); ?>"
+                data-failed="<?php echo esc_attr($value['failed_calls']); ?>"
+                data-usec="<?php echo esc_attr($value['usec']); ?>"
+            >
+                <summary>
+                    <span class="dashicons dashicons-arrow-right-alt2"></span>
+                    <code>
+                        <?php echo esc_html($key); ?>
+                    </code>
+                    <time title="Average CPU time consumed per call">
+                        <?php if ($value['usec_per_call'] < 100): ?>
+                            <?php echo round($value['usec_per_call'], 0); ?> μs
+                        <?php else: ?>
+                            <?php echo round($value['usec_per_call'] / 1000, 2); ?> ms
+                        <?php endif; ?>
+                    </time>
+                </summary>
+
+                <ul>
+                    <li title="Number of executed calls" data-sort="calls">
+                        <span class="dashicons dashicons-controls-play"></span>
+                        <time>
+                            <?php echo number_format_i18n($value['calls']); ?>
+                        </time>
+                    </li>
+                    <li title="Number of rejected calls" data-sort="rejected">
+                        <span class="dashicons dashicons-undo"></span>
+                        <time>
+                            <?php echo number_format_i18n($value['rejected_calls']); ?>
+                        </time>
+                    </li>
+                    <li title="Number of failed calls" data-sort="failed">
+                        <span class="dashicons dashicons-dismiss"></span>
+                        <time>
+                            <?php echo number_format_i18n($value['failed_calls']); ?>
+                        </time>
+                    </li>
+                    <li title="Total CPU time consumed by the command" data-sort="usec">
+                        <span class="dashicons dashicons-clock"></span>
+                        <time>
+                            <?php if ($value['usec'] < 100): ?>
+                                <?php echo round($value['usec'], 0); ?> μs
+                            <?php elseif ($value['usec'] < (1000 * 1000)): ?>
+                                <?php echo round($value['usec'] / 1000, 2); ?> ms
+                            <?php else: ?>
+                                <?php echo round($value['usec'] / 1000 / 1000, 2); ?> sec
+                            <?php endif; ?>
+                        </time>
+                    </li>
+                </ul>
+            </details>
+        <?php endforeach; ?>
+
+    <?php endif; ?>
+
+</div>

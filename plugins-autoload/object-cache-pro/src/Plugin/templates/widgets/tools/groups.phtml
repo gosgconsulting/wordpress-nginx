@@ -1,0 +1,27 @@
+<div class="objectcache:widget objectcache:groups-widget">
+    <p>
+        Run a cache scan to see a list of all groups currently present in the cache.
+        This may take a while.
+    </p>
+
+    <div class="actions">
+        <div>
+            <button class="button button-primary" data-text="Scan groups" data-loading="Scanning...">
+                Scan groups
+            </button>
+
+            <?php if (! $this->plugin->config()->cluster) : ?>
+                <label>
+                    <input type="checkbox" name="memory" value="1" />
+                    Calculate memory
+                </label>
+            <?php endif; ?>
+        </div>
+
+        <textarea id="objectcache-groups"></textarea>
+
+        <button class="button button-secondary hidden" data-download-target=".table-container">
+            Download
+        </button>
+    </div>
+</div>

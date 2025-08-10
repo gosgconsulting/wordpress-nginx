@@ -1,0 +1,101 @@
+<?php
+
+$config = $this->plugin->config();
+$license = $this->plugin->license();
+$diagnostics = $this->plugin->diagnostics();
+
+$usingRelay = $diagnostics->usingRelay();
+$usingCache = $diagnostics->usingRelayCache();
+$usingAdaptiveCache = $diagnostics->usingRelayAdaptiveCache();
+
+$status = $diagnostics['relay']['relay-cache'];
+$strategy = $diagnostics['relay']['relay-strategy'];
+$adaptiveLoad = $diagnostics['relay']['relay-adaptive-load'];
+
+$keys = $diagnostics['statistics']['relay-keys'] ?? false;
+$memory = $diagnostics['statistics']['relay-memory'] ?? false;
+$maxMemory = $diagnostics['relay']['relay-maxmemory'] ?? 100;
+$license = $diagnostics['relay']['relay-license'] ?? null;
+
+$adminNonceUrl = function ($action) {
+    $function = is_network_admin() ? 'network_admin_url' : 'admin_url';
+    $url = $function(add_query_arg('action', $action, $this->plugin->baseurl()));
+
+    return wp_nonce_url($url, $action);
+};
+
+?>
+
+<div class="objectcache:widget objectcache:relay-overview-widget objectcache:overview-widget">
+
+    <ul>
+        <li>
+            <span class="dashicons dashicons-performance"></span>
+            Status: <?php echo $status->html; ?>
+        </li>
+
+        <?php if ($usingRelay && $license->hasIssue()) : ?>
+            <li>
+                <span class="dashicons dashicons-admin-network"></span>
+                License: <?php echo ucwords($license->html() ?? 'error'); ?>
+            </li>
+        <?php endif; ?>
+
+        <li>
+            <span class="dashicons dashicons-admin-settings"></span>
+            Caching: <?php echo $strategy->html; ?>
+        </li>
+
+        <?php if ($usingCache) : ?>
+            <?php $atCapacity = $memory->isWarning() ? "Relay is running at maximum memory capacity ({$maxMemory}) and will cache no further data." : null; ?>
+
+            <?php if ($config->shared && $keys->hasValue()) : ?>
+                <li title="<?php echo $atCapacity; ?>">
+                    <span class="dashicons dashicons-database"></span>
+                    Memory: <?php printf(_n('%s object', '%s objects', $keys->value), number_format($keys->value)); ?>
+                </li>
+            <?php elseif ($memory->hasValue()): ?>
+                <?php $objects = $keys->hasValue() ? sprintf(_n('%s object', '%s objects', $keys->value), number_format($keys->value)) : null; ?>
+
+                <li title="<?php echo $atCapacity ?: $objects; ?>">
+                    <span class="dashicons dashicons-database"></span>
+                    Memory: <?php echo $memory->html; ?>
+                </li>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if ($usingAdaptiveCache) : ?>
+            <li>
+                <span class="dashicons dashicons-chart-bar"></span>
+                Load Factor: <?php echo $adaptiveLoad->html; ?>
+            </li>
+        <?php endif; ?>
+    </ul>
+
+    <div class="actions">
+
+        <?php if ($usingRelay) : ?>
+            <?php if (\RedisCachePro\Connectors\RelayConnector::supports('last-memory-flush')) : ?>
+                <a class="button button-secondary" href="<?php echo $adminNonceUrl('flush-relay'); ?>">
+                    Flush Memory
+                </a>
+            <?php else: ?>
+                <a class="button button-secondary" href="#" title="Relay extension upgrade required" disabled>
+                    Flush Memory
+                </a>
+            <?php endif; ?>
+        <?php else: ?>
+            <a class="button button-secondary" href="https://objectcache.pro/docs/relay/">
+                Learn More
+            </a>
+        <?php endif; ?>
+
+        <?php if ($usingAdaptiveCache) : ?>
+            <a class="button button-secondary button-ml-auto" href="<?php echo $adminNonceUrl('reset-relay-ratios'); ?>">
+                Reset Ratios
+            </a>
+        <?php endif; ?>
+
+    </div>
+
+</div>

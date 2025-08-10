@@ -1,0 +1,150 @@
+<?php
+
+$license = $this->plugin->license();
+$diagnostics = $this->plugin->diagnostics();
+
+$usingRelay = $diagnostics->usingRelay();
+$usingRelayCache = $diagnostics->usingRelayCache();
+
+$status = $diagnostics['general']['status'];
+$dropin = $diagnostics['general']['dropin'];
+$evictionPolicy = $diagnostics['general']['eviction-policy'];
+
+$phpRedisVersion = $diagnostics['versions']['phpredis'];
+$relayVersion = $diagnostics['versions']['relay'];
+$redisVersion = $diagnostics['versions']['redis'];
+
+$redisMemory = $diagnostics['statistics']['redis-memory'];
+$redisTracking = $diagnostics['statistics']['redis-tracking'];
+
+$relayMemory = $diagnostics['statistics']['relay-memory'] ?? false;
+$relayLicense = $diagnostics['relay']['relay-license'] ?? null;
+
+$dump = '';
+
+foreach ($diagnostics->toArray() as $groupName => $group) {
+    if (empty($group)) {
+        continue;
+    }
+
+    $dump .= sprintf("\n### %s ###\n\n", ucfirst($groupName));
+
+    foreach ($group as $name => $diagnostic) {
+        $dump .= sprintf("%s: %s\n", $diagnostic->name, $diagnostic->withComment()->text);
+    }
+}
+
+$relayConfig = \RedisCachePro\Diagnostics\Diagnostic::name('Configuration');
+$relayConfigStatus = $this->plugin->healthTestRelayConfig()['status'] === 'good' ? 'value' : 'warning';
+$relayConfig->{$relayConfigStatus}('Unoptimized');
+
+?>
+
+<div class="objectcache:widget objectcache:overview-widget objectcache:health-widget">
+    <ul>
+        <li>
+            <span class="dashicons dashicons-performance"></span>
+            Status: <?php echo $status->html; ?>
+        </li>
+
+        <li>
+            <a href="<?php echo admin_url('site-health.php'); ?>">
+                <span class="dashicons dashicons-admin-plugins"></span>
+                Drop-in: <?php echo $dropin->html; ?>
+            </a>
+        </li>
+
+        <li>
+            <a href="<?php echo admin_url('site-health.php'); ?>">
+                <span class="dashicons dashicons-admin-settings"></span>
+                Eviction: <?php echo $evictionPolicy->html; ?>
+            </a>
+        </li>
+
+        <?php if ($usingRelay && $relayConfig->hasIssue()): ?>
+            <li>
+                <a href="<?php echo admin_url('site-health.php'); ?>">
+                    <span class="dashicons dashicons-admin-settings"></span>
+                    Configuration: <?php echo $relayConfig->withComment()->html; ?>
+                </a>
+            </li>
+        <?php endif; ?>
+
+        <?php if (! $license->isValid()) : ?>
+            <li>
+                <span class="dashicons dashicons-admin-network"></span>
+                License:
+                <data class="error">
+                    <?php if (! $this->plugin->token()) : ?>
+                        Missing token
+                    <?php else : ?>
+                        <?php echo ucwords($license->state() ?? 'error'); ?>
+                    <?php endif; ?>
+                </data>
+            </li>
+        <?php endif; ?>
+
+        <?php if ($usingRelay && $relayLicense->hasIssue()) : ?>
+            <li>
+                <a href="<?php echo admin_url('site-health.php'); ?>">
+                    <span class="dashicons dashicons-admin-network"></span>
+                    Relay License: <?php echo ucwords($relayLicense->html() ?? 'error'); ?>
+                </a>
+            </li>
+        <?php endif; ?>
+
+        <li>
+            <span class="dashicons dashicons-database"></span>
+            Redis: <?php echo $redisMemory->html; ?>
+        </li>
+
+        <?php if ($usingRelayCache): ?>
+            <li>
+                <span class="dashicons dashicons-database"></span>
+                Relay: <?php echo $relayMemory->html; ?>
+            </li>
+
+            <?php if ($redisTracking->hasIssue()): ?>
+                <li>
+                    <span class="dashicons dashicons-admin-links"></span>
+                    Key Tracking: <?php echo $redisTracking->withComment()->html; ?>
+                </li>
+            <?php endif; ?>
+
+        <?php endif; ?>
+
+        <?php if ($phpRedisVersion->hasIssue() && $diagnostics->clientIsPhpRedis()) : ?>
+            <li>
+                <a href="<?php echo admin_url('site-health.php'); ?>">
+                    <span class="dashicons dashicons-media-code"></span>
+                    PhpRedis: <?php echo $phpRedisVersion->withComment()->html; ?>
+                </a>
+            </li>
+        <?php endif; ?>
+
+        <?php if ($relayVersion->hasIssue() && $diagnostics->clientIsRelay()) : ?>
+            <li>
+                <a href="<?php echo admin_url('site-health.php'); ?>">
+                    <span class="dashicons dashicons-media-code"></span>
+                    Relay: <?php echo $relayVersion->withComment()->html; ?>
+                </a>
+            </li>
+        <?php endif; ?>
+
+        <?php if ($redisVersion->hasIssue()) : ?>
+            <li>
+                <a href="<?php echo admin_url('site-health.php'); ?>">
+                    <span class="dashicons dashicons-admin-tools"></span>
+                    Redis: <?php echo $redisVersion->withComment()->html; ?>
+                </a>
+            </li>
+        <?php endif; ?>
+    </ul>
+
+    <div class="actions">
+        <button class="button button-secondary" data-download-target="#objectcache-diagnostics">
+            Download Report
+        </button>
+        <textarea id="objectcache-diagnostics"><?php echo esc_textarea(trim($dump)); ?></textarea>
+    </div>
+</div>

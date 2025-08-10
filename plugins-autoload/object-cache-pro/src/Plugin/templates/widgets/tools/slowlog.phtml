@@ -1,0 +1,68 @@
+<?php
+
+global $wp_object_cache;
+
+try {
+    $log = $wp_object_cache->connection()->slowlog('get', 100);
+} catch (Throwable $th) {
+    $error = $th->getMessage();
+    $log = false;
+}
+
+if (is_array($log)) {
+    usort($log, function ($a, $b) {
+        return strcmp($b[2], $a[2]);
+    });
+
+    $log = array_slice($log, 0, 15);
+}
+
+?>
+
+<div class="objectcache:widget objectcache:slowlog-widget objectcache:flushlog-widget">
+
+    <?php if ($log === false) : ?>
+
+        <p class="inset">Unable to retrieve slow command statistics (<?php echo esc_html($error); ?>).</p>
+
+    <?php elseif (! count($log)) : ?>
+
+        <p class="inset">No slow commands have been logged, yet.</p>
+
+    <?php else : ?>
+
+        <?php foreach ($log as $item): ?>
+
+            <details>
+                <summary>
+                    <span class="dashicons dashicons-arrow-right-alt2"></span>
+                    <code>
+                        <?php echo esc_html($item[3][0]); ?>
+                    </code>
+                    <time datetime="<?php echo date('c', $item[1]); ?>">
+                        <?php echo round($item[2] / 1000, 2); ?> ms
+                    </time>
+                </summary>
+
+                <ul>
+                    <li>
+                        <span class="dashicons dashicons-clock"></span>
+                        <time datetime="<?php echo date('c', $item[1]); ?>">
+                            <?php echo date_i18n('Y-m-d G:i:s', $item[1]); ?>
+                        </time>
+                    </li>
+                    <li>
+                        <span class="dashicons dashicons-editor-code"></span>
+                        <code>
+                            <?php echo esc_html($item[3][0]); ?>
+                            <?php echo esc_html($item[3][1] ?? ''); ?>
+                            <?php echo count($item[3]) > 2 ? '...' : ''; ?>
+                        </code>
+                    </li>
+                </ul>
+            </details>
+        <?php endforeach; ?>
+
+    <?php endif; ?>
+
+</div>

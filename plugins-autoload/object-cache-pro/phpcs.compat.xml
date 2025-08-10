@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<ruleset name="PHP Compatibility">
+  <config name="testVersion" value="7.2-" />
+  <config name="installed_paths" value="vendor/phpcompatibility/php-compatibility/PHPCompatibility" />
+
+  <rule ref="PHPCompatibility">
+    <exclude name="PHPCompatibility.Attributes.NewAttributes" />
+  </rule>
+</ruleset>
