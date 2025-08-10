@@ -17,6 +17,12 @@ foreach ($_ENV as $key => $value) {
     }
 }
 
+// Optional: allow additional config via env early (so user-defined defines take precedence)
+$__extraCfgEarly = getenv('WP_EXTRA_CONFIG');
+if ($__extraCfgEarly) {
+    @eval($__extraCfgEarly);
+}
+
 // Derive WP URLs robustly to avoid leaking internal ports (e.g., :8080)
 // Modes:
 // - WP_URL_MODE=auto → build from request Host/Scheme (handles multiple domains)
@@ -68,13 +74,6 @@ if (!defined('WP_HOME') || !defined('WP_SITEURL')) {
             }
         }
     }
-}
-
-// Optional: allow additional config via env (e.g., DOMAIN_CURRENT_SITE)
-$__extraCfg = getenv('WP_EXTRA_CONFIG');
-if ($__extraCfg) {
-    // Expect simple define('NAME','value'); statements
-    @eval($__extraCfg);
 }
 
 // Derive DB_* constants from common platform variables if not explicitly provided
