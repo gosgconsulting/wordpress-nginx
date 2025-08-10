@@ -52,31 +52,7 @@ for THEME in twentytwentyfive twentytwentyfour twentytwentythree; do
   fi
 done
 
-# Always install (copy/unzip) plugins provided in plugins-autoload, so they appear on fresh installs
-SRC_BASE="/usr/src/wordpress/wp-content/plugins-autoload"
-SRC_DIR="$SRC_BASE"
-DEST_DIR="/var/www/wp-content/plugins"
-if [ -d "$SRC_DIR" ]; then
-  mkdir -p "$DEST_DIR"
-  # Copy unpacked plugin folders except 'library'
-  find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null | while read -r DIRNAME; do
-    if [ "${DIRNAME,,}" = "library" ]; then continue; fi
-    cp -r "$SRC_DIR/$DIRNAME" "$DEST_DIR/" 2>/dev/null || true
-  done
-  chown -R nobody:nobody "$DEST_DIR" || true
-fi
-
-# Auto-activate if requested
-_auto_plugins_flag="$(printf '%s' "${WP_AUTO_PLUGINS:-}" | tr '[:upper:]' '[:lower:]')"
-if [ "$_auto_plugins_flag" = "yes" ] || [ "$_auto_plugins_flag" = "true" ] || [ "$_auto_plugins_flag" = "1" ] || [ "$_auto_plugins_flag" = "on" ]; then
-  if [ -x /usr/local/bin/wp ] && /usr/local/bin/wp --path=/usr/src/wordpress core is-installed >/dev/null 2>&1; then
-    # Activate copied directories
-    for DIRNAME in $(find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' 2>/dev/null); do
-      if [ "${DIRNAME,,}" = "library" ]; then continue; fi
-      /usr/local/bin/wp --path=/usr/src/wordpress plugin activate "$DIRNAME" >/dev/null 2>&1 || true
-    done
-  fi
-fi
+# Plugin autoloading is disabled by request; folder is ignored
 
 # If active theme directory is missing, activate a safe default via WP-CLI when possible
 if [ -x /usr/local/bin/wp ] && /usr/local/bin/wp --path=/usr/src/wordpress core is-installed >/dev/null 2>&1; then
