@@ -17,14 +17,34 @@ foreach ($_ENV as $key => $value) {
     }
 }
 
-// Map WORDPRESS_SITE_URL env to the expected WP constants if provided
-$derivedSiteUrl = getenv('WP_HOME') ?: getenv('WP_SITEURL') ?: getenv('WORDPRESS_SITE_URL');
-if ($derivedSiteUrl) {
-    if (!defined('WP_HOME')) {
-        define('WP_HOME', $derivedSiteUrl);
+// Derive WP URLs robustly to avoid leaking internal ports (e.g., :8080)
+// Priority: explicit WP_HOME/WP_SITEURL → WORDPRESS_SITE_URL → RAILWAY_PUBLIC_DOMAIN (https)
+if (!defined('WP_HOME') || !defined('WP_SITEURL')) {
+    $siteFromEnv   = getenv('WP_HOME') ?: getenv('WP_SITEURL') ?: getenv('WORDPRESS_SITE_URL') ?: '';
+    $railwayDomain = getenv('RAILWAY_PUBLIC_DOMAIN') ?: '';
+
+    $finalUrl = $siteFromEnv;
+    if (!$finalUrl && $railwayDomain) {
+        // Ensure https scheme for public domain
+        $host = preg_replace('#^https?://#i', '', $railwayDomain);
+        $finalUrl = 'https://' . $host;
     }
-    if (!defined('WP_SITEURL')) {
-        define('WP_SITEURL', $derivedSiteUrl);
+
+    if ($finalUrl) {
+        // Strip any port unless explicitly allowed
+        if (!getenv('WP_ALLOW_PORT_IN_URL')) {
+            $finalUrl = preg_replace('#:(\d{2,5})(?=/|$)#', '', $finalUrl);
+        }
+        // Ensure scheme is present
+        if (!preg_match('#^https?://#i', $finalUrl)) {
+            $finalUrl = 'https://' . $finalUrl;
+        }
+        if (!defined('WP_HOME')) {
+            define('WP_HOME', $finalUrl);
+        }
+        if (!defined('WP_SITEURL')) {
+            define('WP_SITEURL', $finalUrl);
+        }
     }
 }
 
