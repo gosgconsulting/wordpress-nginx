@@ -44,6 +44,27 @@ chown -R nobody:nobody /var/www/wp-content || true
 find /var/www/wp-content -type d -exec chmod 775 {} \; || true
 find /var/www/wp-content -type f -exec chmod 664 {} \; || true
 
+# Restore missing default themes if the volume lost them
+for THEME in twentytwentyfive twentytwentyfour twentytwentythree; do
+  if [ -d "/usr/src/wordpress/wp-content/themes/${THEME}" ] && [ ! -d "/var/www/wp-content/themes/${THEME}" ]; then
+    cp -r "/usr/src/wordpress/wp-content/themes/${THEME}" "/var/www/wp-content/themes/" || true
+    chown -R nobody:nobody "/var/www/wp-content/themes/${THEME}" || true
+  fi
+done
+
+# If active theme directory is missing, activate a safe default via WP-CLI when possible
+if [ -x /usr/local/bin/wp ] && /usr/local/bin/wp --path=/usr/src/wordpress core is-installed >/dev/null 2>&1; then
+  ACTIVE_SLUG=$(/usr/local/bin/wp --path=/usr/src/wordpress option get stylesheet 2>/dev/null || true)
+  if [ -n "$ACTIVE_SLUG" ] && [ ! -d "/var/www/wp-content/themes/${ACTIVE_SLUG}" ]; then
+    for CANDIDATE in twentytwentyfive twentytwentyfour twentytwentythree; do
+      if [ -d "/var/www/wp-content/themes/${CANDIDATE}" ]; then
+        /usr/local/bin/wp --path=/usr/src/wordpress theme activate "${CANDIDATE}" >/dev/null 2>&1 || true
+        break
+      fi
+    done
+  fi
+fi
+
 # Ensure Nginx cache directories exist and are writable
 mkdir -p /var/cache/nginx/fastcgi /var/cache/nginx/fastcgi_long || true
 chown -R nginx:nginx /var/cache/nginx || true
