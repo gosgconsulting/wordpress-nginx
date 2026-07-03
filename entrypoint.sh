@@ -88,6 +88,45 @@ if (strpos($c, $old) !== false) {
 PHP_PATCH
 fi
 
+# Fix fatal error in gospinme theme: is_account_page() is a WooCommerce
+# function, but plugin autoloading is disabled (see below) so WooCommerce
+# never loads and the function is undefined, crashing every request.
+GOSPIN_WOOCOMMERCE_FILE="/var/www/wp-content/themes/gospinme/inc/woocommerce.php"
+if [ -f "$GOSPIN_WOOCOMMERCE_FILE" ]; then
+  php -- "$GOSPIN_WOOCOMMERCE_FILE" <<'PHP_PATCH'
+<?php
+$f = $argv[1];
+$c = file_get_contents($f);
+$old = <<<'OLD'
+function redirect_woocommerce_dashboard()
+{
+    // if (is_add_payment_method_page()) {
+    //     wp_redirect(esc_url(add_query_arg('tab', 'payments', quickvcard_get_page_url_by_template('tpl-quickvcard-dashboard')))); // Change URL
+    //     exit;
+    // }
+    if (is_account_page() && is_user_logged_in() && !is_wc_endpoint_url()) {
+OLD;
+$new = <<<'NEW'
+function redirect_woocommerce_dashboard()
+{
+    // if (is_add_payment_method_page()) {
+    //     wp_redirect(esc_url(add_query_arg('tab', 'payments', quickvcard_get_page_url_by_template('tpl-quickvcard-dashboard')))); // Change URL
+    //     exit;
+    // }
+    if (!function_exists('is_account_page')) {
+        return;
+    }
+    if (is_account_page() && is_user_logged_in() && !is_wc_endpoint_url()) {
+NEW;
+if (strpos($c, $old) !== false) {
+    file_put_contents($f, str_replace($old, $new, $c));
+    echo "gospinme woocommerce.php: patched redirect_woocommerce_dashboard() guard\n";
+} else {
+    echo "gospinme woocommerce.php: expected pattern not found (already patched or file changed), skipping\n";
+}
+PHP_PATCH
+fi
+
 # Plugin autoloading is disabled by request; folder is ignored
 
 # If active theme directory is missing, activate a safe default via WP-CLI when possible
