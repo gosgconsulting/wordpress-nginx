@@ -52,6 +52,42 @@ for THEME in twentytwentyfive twentytwentyfour twentytwentythree; do
   fi
 done
 
+# Fix fatal error in gospinme theme: get_post_type_object('vcards') can return
+# null (post type not registered yet), crashing every request with
+# "Attempt to assign property \"rewrite\" on null". Guard with a null check.
+GOSPIN_REWRITE_FILE="/var/www/wp-content/themes/gospinme/inc/rewrite-rules.php"
+if [ -f "$GOSPIN_REWRITE_FILE" ]; then
+  php -- "$GOSPIN_REWRITE_FILE" <<'PHP_PATCH'
+<?php
+$f = $argv[1];
+$c = file_get_contents($f);
+$old = <<<'OLD'
+    // vcards rewrite
+    $vcards_args = get_post_type_object('vcards'); // get the post type to modify
+    $vcards_args->rewrite = array('slug' => 'vcards/%user%');
+
+    // re-register the same post type includeing the new args
+    register_post_type('vcards', $vcards_args);
+OLD;
+$new = <<<'NEW'
+    // vcards rewrite
+    $vcards_args = get_post_type_object('vcards'); // get the post type to modify
+    if ($vcards_args) {
+        $vcards_args->rewrite = array('slug' => 'vcards/%user%');
+
+        // re-register the same post type includeing the new args
+        register_post_type('vcards', $vcards_args);
+    }
+NEW;
+if (strpos($c, $old) !== false) {
+    file_put_contents($f, str_replace($old, $new, $c));
+    echo "gospinme rewrite-rules.php: patched null \$vcards_args guard\n";
+} else {
+    echo "gospinme rewrite-rules.php: expected pattern not found (already patched or file changed), skipping\n";
+}
+PHP_PATCH
+fi
+
 # Plugin autoloading is disabled by request; folder is ignored
 
 # If active theme directory is missing, activate a safe default via WP-CLI when possible
